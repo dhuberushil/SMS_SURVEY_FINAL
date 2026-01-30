@@ -57,7 +57,15 @@ if (s3Host) {
   cspDirectives.connectSrc.push('https://*.s3.amazonaws.com');
 }
 
-app.use(helmet({ contentSecurityPolicy: { directives: cspDirectives } }));
+// Configure Helmet: use our explicit CSP (no defaults) and disable
+// COOP / Origin-Agent-Cluster headers when running over HTTP
+app.use(
+  helmet({
+    contentSecurityPolicy: { directives: cspDirectives, useDefaults: false },
+    crossOriginOpenerPolicy: false,
+    originAgentCluster: false,
+  })
+);
 app.use(compression());
 // CORS: dynamic allowlist managed in-memory; initialize from env but
 // allow runtime updates via admin routes. If no origins configured, allow
