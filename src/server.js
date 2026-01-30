@@ -81,10 +81,6 @@ app.use((req, res, next) => {
   next();
 });
 app.use(compression());
-// CORS: dynamic allowlist managed in-memory; initialize from env but
-// allow runtime updates via admin routes. If no origins configured, allow
-// non-browser requests (no Origin) for server-to-server calls.
-const corsList = require('./services/corsList');
 // TEMPORARY: Allow all origins for dev/testing
 app.use(cors({
   origin: true,      // reflect any origin
