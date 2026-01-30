@@ -59,29 +59,22 @@ if (s3Host) {
 
 app.use(helmet({ contentSecurityPolicy: { directives: cspDirectives } }));
 app.use(compression());
-// CORS: allow a configurable set of origins (use CORS_ORIGINS CSV or FORM_BASE_URL)
-// If no origins configured, keep permissive for development. Allow non-browser requests (no Origin).
-const corsOptions = (() => {
-  const env = process.env.CORS_ORIGINS || process.env.FORM_BASE_URL || '';
-  const allowed = env
-    ? env
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : [];
-  return {
-    origin: (origin, callback) => {
-      // allow server-to-server or curl (no origin)
-      if (!origin) return callback(null, true);
-      if (allowed.length === 0) return callback(null, true);
-      if (allowed.includes(origin)) return callback(null, true);
-      // allow origins that exactly match when they include protocol and host
-      return callback(new Error('CORS policy: origin not allowed'));
-    },
-    credentials: true,
-    exposedHeaders: ['Content-Length', 'X-Requested-With'],
-  };
-})();
+// CORS: dynamic allowlist managed in-memory; initialize from env but
+// allow runtime updates via admin routes. If no origins configured, allow
+// non-browser requests (no Origin) for server-to-server calls.
+const corsList = require('./services/corsList');
+const corsOptions = {
+  origin: (origin, callback) => {
+    // allow server-to-server or curl (no origin)
+    if (!origin) return callback(null, true);
+    const allowed = corsList.getAllowed();
+    if (!allowed || allowed.length === 0) return callback(null, true);
+    if (allowed.includes(origin)) return callback(null, true);
+    return callback(new Error('CORS policy: origin not allowed'));
+  },
+  credentials: true,
+  exposedHeaders: ['Content-Length', 'X-Requested-With'],
+};
 app.use(cors(corsOptions));
 // Increase JSON/urlencoded limits to allow inline base64 image submissions during testing.
 app.use(express.json({ limit: '50mb' }));
@@ -137,6 +130,14 @@ app.get('/health', (req, res) => {
 // Mount form routes (Step B flow)
 const formsRouter = require('./routes/forms');
 app.use('/api/form', formsRouter);
+
+// Admin routes (runtime CORS management)
+try {
+  const adminRouter = require('./routes/admin');
+  app.use('/api/admin', adminRouter);
+} catch (e) {
+  logger.warn('Admin routes not available: %s', e && e.message);
+}
 
 // Serve a tiny inline SVG as favicon to avoid 404s (keeps it simple)
 app.get('/favicon.ico', (req, res) => {
