@@ -85,6 +85,10 @@ app.use(compression());
 // allow runtime updates via admin routes. If no origins configured, allow
 // non-browser requests (no Origin) for server-to-server calls.
 const corsList = require('./services/corsList');
+// CORS options: return a boolean to the callback instead of throwing an Error.
+// Throwing an Error here becomes an uncaught error bubble in some setups
+// and can produce 500s in logs; returning `false` simply results in no
+// CORS headers being emitted (the browser will block the request).
 const corsOptions = {
   origin: (origin, callback) => {
     // allow server-to-server or curl (no origin)
@@ -92,7 +96,8 @@ const corsOptions = {
     const allowed = corsList.getAllowed();
     if (!allowed || allowed.length === 0) return callback(null, true);
     if (allowed.includes(origin)) return callback(null, true);
-    return callback(new Error('CORS policy: origin not allowed'));
+    // Deny without throwing — safer for servers behind process managers
+    return callback(null, false);
   },
   credentials: true,
   exposedHeaders: ['Content-Length', 'X-Requested-With'],
@@ -160,6 +165,19 @@ try {
 } catch (e) {
   logger.warn('Admin routes not available: %s', e && e.message);
 }
+
+// Global error handler: log stack traces and return JSON errors.
+// Placed after routers so errors from route handlers and middleware are captured.
+app.use((err, req, res, next) => {
+  try {
+    logger.error('Unhandled error: %o', err && (err.stack || err.message) ? (err.stack || err.message) : err);
+  } catch (e) {
+    // ignore logging errors
+  }
+  if (res.headersSent) return next(err);
+  const status = err && err.status ? err.status : 500;
+  res.status(status).json({ success: false, error: err && err.message ? err.message : 'Internal Server Error' });
+});
 
 // Serve a tiny inline SVG as favicon to avoid 404s (keeps it simple)
 app.get('/favicon.ico', (req, res) => {

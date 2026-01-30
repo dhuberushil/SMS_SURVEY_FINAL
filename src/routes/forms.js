@@ -29,6 +29,7 @@ function verifyTokenMiddleware(req, res, next) {
   }
 
   try {
+    logger.debug('verifyToken: attempting verify token (prefix=%s)', token && token.slice ? token.slice(0, 8) : '[none]');
     const decoded = jwt.verify(token, TOKEN_SECRET);
     if (!decoded || !decoded.email) {
       logger.warn(
@@ -41,6 +42,7 @@ function verifyTokenMiddleware(req, res, next) {
     return next();
   } catch (err) {
     logger.warn('verifyToken: token verification failed: %s', err && err.message);
+    logger.debug('verifyToken error stack: %s', err && err.stack);
     return res.status(401).json({ success: false, error: 'invalid or expired token' });
   }
 }
@@ -491,8 +493,8 @@ router.post('/register', async (req, res) => {
     } catch (e) {
       logger.warn('Transaction rollback failed (final error handler): %s', e && e.message);
     }
-    logger.error('register endpoint error: %o', err);
-    return res.status(500).json({ status: 'error', message: err.message });
+    logger.error('register endpoint error: %o', err && (err.stack || err.message));
+    return res.status(500).json({ status: 'error', message: err && err.message ? err.message : 'Internal Server Error' });
   }
 });
 
@@ -640,8 +642,10 @@ router.post('/resend-stepb', async (req, res) => {
 // Status check by token
 router.get('/status', verifyTokenMiddleware, async (req, res) => {
   try {
-    const email = req.stepb.email;
+    const email = req.stepb && req.stepb.email;
+    logger.debug('/status: checking submission status for %s', email);
     const submission = await FormSubmission.findOne({ where: { email } });
+    logger.debug('/status: found submission: %o', submission ? submission.toJSON() : null);
     if (!submission) return res.status(404).json({ success: false, error: 'not found' });
     return res.json({
       success: true,
@@ -649,7 +653,7 @@ router.get('/status', verifyTokenMiddleware, async (req, res) => {
       stepBNudgeCount: submission.stepBNudgeCount || 0,
     });
   } catch (err) {
-    logger.error('status error: %o', err);
+    logger.error('status error: %o', err && (err.stack || err.message));
     return res.status(500).json({ success: false, error: err.message });
   }
 });
