@@ -66,6 +66,20 @@ app.use(
     originAgentCluster: false,
   })
 );
+
+// Defensive: ensure no COOP / Origin-Agent-Cluster headers are emitted
+// (some proxies or older middleware can still add them). This removes
+// them from the outgoing response prior to send so browsers won't see
+// inconsistent values across requests.
+app.use((req, res, next) => {
+  try {
+    res.removeHeader('Cross-Origin-Opener-Policy');
+    res.removeHeader('Origin-Agent-Cluster');
+  } catch (e) {
+    // ignore
+  }
+  next();
+});
 app.use(compression());
 // CORS: dynamic allowlist managed in-memory; initialize from env but
 // allow runtime updates via admin routes. If no origins configured, allow
