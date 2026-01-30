@@ -85,24 +85,11 @@ app.use(compression());
 // allow runtime updates via admin routes. If no origins configured, allow
 // non-browser requests (no Origin) for server-to-server calls.
 const corsList = require('./services/corsList');
-// CORS options: return a boolean to the callback instead of throwing an Error.
-// Throwing an Error here becomes an uncaught error bubble in some setups
-// and can produce 500s in logs; returning `false` simply results in no
-// CORS headers being emitted (the browser will block the request).
-const corsOptions = {
-  origin: (origin, callback) => {
-    // allow server-to-server or curl (no origin)
-    if (!origin) return callback(null, true);
-    const allowed = corsList.getAllowed();
-    if (!allowed || allowed.length === 0) return callback(null, true);
-    if (allowed.includes(origin)) return callback(null, true);
-    // Deny without throwing — safer for servers behind process managers
-    return callback(null, false);
-  },
-  credentials: true,
-  exposedHeaders: ['Content-Length', 'X-Requested-With'],
-};
-app.use(cors(corsOptions));
+// TEMPORARY: Allow all origins for dev/testing
+app.use(cors({
+  origin: true,      // reflect any origin
+  credentials: true
+}));
 // Increase JSON/urlencoded limits to allow inline base64 image submissions during testing.
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
