@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: sms_survey
+      POSTGRES_USER: sms_user
+      POSTGRES_PASSWORD: strongpassword
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sms_user -d sms_survey"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      # If you prefer a single DATABASE_URL, set it in .env instead of these
+      - DB_NAME=sms_survey
+      - DB_USER=sms_user
+      - DB_PASS=strongpassword
+      - DB_HOST=db
+      - DB_PORT=5432
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  db_data:

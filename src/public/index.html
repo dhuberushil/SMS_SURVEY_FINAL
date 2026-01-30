@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SMS Survey Signup</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <main class="container">
+    <header class="hero">
+      <div class="hero-top">
+        <div class="lang-select">
+          <span class="flag">🇺🇸</span>
+          <select id="lang" aria-label="Language">
+            <option value="en" selected>English</option>
+            <option value="es">Español</option>
+          </select>
+        </div>
+      </div>
+      <div class="hero-body">
+        <h1>Schedule a Lap-Band® Consultation</h1>
+        <p class="subtitle">Complete the Form Below</p>
+      </div>
+    </header>
+
+    <form id="signup" action="/api/form/initial-submit" method="post" novalidate>
+      <div style="display:flex;gap:8px">
+        <label style="flex:1">First name <input name="firstName" required placeholder="First name"></label>
+        <label style="flex:1">Last name <input name="lastName" required placeholder="Last name"></label>
+      </div>
+      <label>Email <input name="email" type="email" required placeholder="you@example.com"></label>
+
+      <label class="phone">Mobile
+        <div class="phone-row">
+          <select id="country_code" name="country_code" aria-label="Country code">
+            <option value="">Select country</option>
+          </select>
+          <input id="phone_local" name="phone_local" inputmode="tel" placeholder="1234567890" required>
+        </div>
+        <input type="hidden" name="mobile" id="mobile">
+      </label>
+
+      <label class="consent">
+        <input type="checkbox" name="consent" value="1" required>
+        By checking this box you agree to Medtimo® and Lap-Band® and their agents contacting you with account-related messages and marketing offers at the phone number or email you provided above, including by autodialed text messages and calls, even if your number is listed on a state or federal Do Not Call list. Standard message and data rates may apply. You may opt-out at any time. You also acknowledge that you have read our <a href="https://www.lapband.com/privacy-policy/" target="_blank" rel="noopener">Privacy Policy</a> and <a href="https://www.lapband.com/terms-and-conditions/" target="_blank" rel="noopener">Terms of Use</a>.
+      </label>
+      <div class="actions">
+        <button id="submit-btn" type="submit" disabled style="display:inline-block;">Start Survey</button>
+      </div>
+    </form>
+
+    <div id="msg" role="status" aria-live="polite" class="msg" ></div>
+    <!-- Thank-you modal shown after initial submit -->
+    <div id="thankyou-modal" class="modal-backdrop" aria-hidden="true" style="display:none;">
+      <div role="dialog" aria-modal="true" class="modal-card" style="border-left:6px solid #ff6d3a;">
+        <button id="thankyou-close" aria-label="Close" style="position:absolute; right:16px; top:12px; background:transparent; border:none; color:#111; font-size:20px; cursor:pointer;">✕</button>
+        <div style="text-align:center;padding:8px 4px;">
+          <div style="width:82px;height:82px;border-radius:50%;background:#ffd778;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;color:#333;font-weight:bold;">✓</div>
+          <h2 style="margin:0 0 8px;">Thank You</h2>
+          <p style="margin:0; line-height:1.4;">We have received your submission. Check your messages for a link to complete the next step. This popup will close automatically.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+    <!-- Confirm-update modal (shown when server reports existing user) -->
+    <div id="confirm-modal" class="modal-backdrop" aria-hidden="true" style="display:none;">
+      <div role="dialog" aria-modal="true" class="modal-card" style="border-left:6px solid #6aa84f;">
+        <button id="confirm-close" aria-label="Close" style="position:absolute; right:16px; top:12px; background:transparent; border:none; color:#111; font-size:20px; cursor:pointer;">✕</button>
+        <div style="text-align:left;padding:12px;">
+          <h2 style="margin:0 0 8px;">Confirm Update</h2>
+          <p id="confirm-note" style="margin:0 0 12px;">We found an existing account. Do you want to update it with your new information?</p>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+            <button id="confirm-cancel" style="padding:8px 12px;background:#eee;border:1px solid #ccc;">Cancel</button>
+            <button id="confirm-update-restart" style="padding:8px 12px;background:#28a745;border:none;color:#fff;">Update & Restart Survey</button>
+            <button id="confirm-update-keep" style="padding:8px 12px;background:#2d89ef;border:none;color:#fff;">Update (Keep Survey)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  <script src="/app.js" defer></script>
+</body>
+</html>

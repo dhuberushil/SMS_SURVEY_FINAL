@@ -1,0 +1,9 @@
+curl
+git
+build-essential
+nginx
+ufw
+postgresql-client
+software-properties-common
+certbot
+python3-certbot-nginx
